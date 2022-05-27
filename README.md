@@ -1,7 +1,7 @@
 # check-decile
 Codes to check deciles of journals from SJR rankings
 
-The script should be ran from within the 'crime_simulation.Rproj' R project file
+The script should be ran from within the 'check-decile.Rproj' R project file
 
 In order to run the script, follow these steps:
   1. https://www.scimagojr.com/
