@@ -4,7 +4,7 @@ Codes to check deciles of journals from SJR rankings
 The script should be ran from within the 'check-decile.Rproj' R project file
 
 In order to run the script, follow these steps:
-  1. https://www.scimagojr.com/
+  1. Open https://www.scimagojr.com/
   2. Click on "Journal ranking"
   3. Select "Subject area" and "Subject category" you are interested in
   4. Click on "Download data"
