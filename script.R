@@ -12,7 +12,7 @@ library(here)
 library(dplyr)
 
 #load data
-journals <- read.csv(here("database/scimagojr 2021  Subject Category - Law.csv"), sep=";")
+journals <- read.csv(here("database/scimagojr 2022  Subject Category - Law.csv"), sep=";")
 
 #https://support.clarivate.com/ScientificandAcademicResearch/s/article/Journal-Citation-Reports-Quartile-rankings-and-other-metrics?language=en_US
 #Z = (X / Y)
@@ -53,3 +53,13 @@ D1.journals <- journals %>%
 
 #save first decile titles
 write.table(D1.journals, file = "output/D1.journals.txt")
+write.csv(D1.journals, here("output/D1_journals.csv"))
+
+#check first quartile journals
+Q1.journals <- journals %>%
+  filter(SJR.Quartile == "Q1") %>%
+  pull(Title)
+
+#save first quartile titles
+write.table(Q1.journals, file = "output/Q1.journals.txt")
+write.csv(Q1.journals, here("output/Q1_journals.csv"))
