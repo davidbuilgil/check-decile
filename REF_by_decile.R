@@ -271,3 +271,51 @@ quartile
 ggarrange(scatter_plot, quartile)
 ggsave(here('output/graph.jpg'), width = 10, height = 5)
 
+#Make list of journals submitted at least 4 times
+REF_journals_4times <- REF_journals %>%
+  filter(count > 3)
+
+#Calculate average 4* percentage by journal
+REF_outputs <- REF_outputs %>%
+  left_join(REF_submission, by = 'Institution name')
+REF_outputs_4star <- REF_outputs %>%
+  group_by(journal) %>%
+  summarise(three_four = mean(three_four)) %>%
+  left_join(REF_journals_4times, by = 'journal') %>%
+  filter(!is.na(count))
+
+#Select top "decile" (n=86) with better average scores
+REF_outputs_4star <- REF_outputs_4star %>%
+  arrange(desc(three_four)) %>%
+  slice_head(n = 86)
+
+#Add topREF variable
+REF_outputs_4star <- REF_outputs_4star %>%
+  mutate(topREF = 'Y')
+
+#Merge list of topREF journals
+REF_outputs <- REF_outputs %>%
+  left_join(REF_outputs_4star, by = "journal")
+
+#Summary by submission
+REF_submission_topREF <- REF_outputs %>%
+  group_by(`Institution name`) %>%
+  summarise(total = n(),
+            topREF = sum(topREF == "Y", na.rm = TRUE)) %>%
+  mutate(topREF_prop = topREF / total * 100)
+
+#Merge to REF submission database
+REF_submission <- REF_submission %>%
+  left_join(REF_submission_topREF, by = 'Institution name')
+
+#Bivariate correlations
+cor_test_topREF_4 <- cor.test(REF_submission$topREF_prop, REF_submission$`4*`,
+                          method = c("spearman"))
+cor_test_topREF_4
+
+cor_test_topREF_34 <- cor.test(REF_submission$topREF_prop, REF_submission$three_four,
+                          method = c("spearman"))
+cor_test_topREF_34
+
+#Print list
+write.csv(REF_outputs_4star, here("output/top_performing_journals.csv"))
