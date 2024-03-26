@@ -29,7 +29,7 @@ Q1_journals <- read.csv(here("output/Q1_journals.csv"))
 REF_2021 <- REF_2021 %>%
   filter(`Unit of assessment name` == 'Law') %>%
   filter(`Profile` == "Outputs")
-  
+
 #Check stars add to 100
 REF_2021 <- REF_2021 %>%
   mutate(total_stars = `4*` + `3*` + `2*` + `1*` + `Unclassified`,
@@ -159,7 +159,7 @@ REF_outputs <- REF_outputs %>%
                           'UNIVERSITY OF PENNSYLVANIA JOURNAL OF INTERNATIONAL LAW,' = 'UNIVERSITY OF PENNSYLVANIA JOURNAL OF INTERNATIONAL LAW',
                           'THE JOURNAL OF ACCOUNTING, ECONOMICS AND LAW: A CONVIVIUM' = 'ACCOUNTING, ECONOMICS AND LAW: A CONVIVIUM'
                           
-                          )) %>%
+  )) %>%
   mutate(journal = str_replace_all(journal, "&", "AND"))
 
 #Create table of journals in REF
@@ -189,11 +189,11 @@ REF_submission <- REF_outputs %>%
             Q1 = sum(Q1 == "Y", na.rm = TRUE)) %>%
   mutate(D1_prop = D1 / total * 100,
          Q1_prop = Q1 / total * 100)
-  
+
 #Merge overall results of REF submissions
 REF_submission <- REF_2021 %>%
   left_join(REF_submission, by = 'Institution name')
-  
+
 #Bivariate correlations
 cor_test_D1_4 <- cor.test(REF_submission$D1_prop, REF_submission$`4*`,
                           method = c("spearman"))
@@ -310,12 +310,79 @@ REF_submission <- REF_submission %>%
 
 #Bivariate correlations
 cor_test_topREF_4 <- cor.test(REF_submission$topREF_prop, REF_submission$`4*`,
-                          method = c("spearman"))
+                              method = c("spearman"))
 cor_test_topREF_4
 
 cor_test_topREF_34 <- cor.test(REF_submission$topREF_prop, REF_submission$three_four,
-                          method = c("spearman"))
+                               method = c("spearman"))
 cor_test_topREF_34
 
 #Print list
 write.csv(REF_outputs_4star, here("output/top_performing_journals.csv"))
+
+
+
+
+
+
+
+
+
+
+#Observations to annotate
+obs_to_annotate_2 <- c("University of Portsmouth", "The University of Sheffield", 
+                     "University College London", "University of Cambridge",
+                     "University of Oxford", "The University of Manchester",
+                     "The University of Leeds", 
+                     "The London School of Economics and Political Science")
+obs_to_annotate_2 <- subset(REF_submission, `Institution name` %in% obs_to_annotate_2)
+
+#Visualise in scatter plots
+scatter_plot_2 <- ggplot(REF_submission, aes(x = topREF_prop, y = three_four)) +
+  geom_point() +
+  geom_smooth(method = "loess", se = TRUE) + # Loess regression line
+  geom_text(data = obs_to_annotate_2, aes(label = `Institution name`), 
+            nudge_x = 0.02, nudge_y = 2.8, size = 3, check_overlap = TRUE) + # Adjust nudge_x and nudge_y as needed
+  annotate("text", x = Inf, y = Inf, label = sprintf("r = %.2f, p = %.2f", cor_test_topREF_34$estimate, cor_test_topREF_34$p.value),
+           hjust = 1.1, vjust = 1.1) + # Adjust text position as needed
+  labs(title = "Scatter plot with Loess Regression Line",
+       x = "% Publications in top REF rated journals",
+       y = "% Articles rated 3* or 4*") +
+  theme_minimal()
+scatter_plot_2
+
+#Quartile on quartile
+# Categorize into quartiles
+REF_submission$topREF_prop_quartiles <- cut(REF_submission$topREF_prop, breaks = quantile(REF_submission$topREF_prop, probs = 0:4/4), include.lowest = TRUE, labels = FALSE)
+#REF_submission$three_four_quartiles <- cut(REF_submission$three_four, breaks = quantile(REF_submission$three_four, probs = 0:4/4), include.lowest = TRUE, labels = FALSE)
+
+# Create contingency table
+contingency_table_2 <- table(REF_submission$topREF_prop_quartiles, REF_submission$three_four_quartiles)
+
+# Perform Chi-squared test
+chi_squared_test_2 <- chisq.test(contingency_table_2)
+
+# Analyze the results
+print(chi_squared_test_2)
+
+# Convert the contingency table to a data frame for plotting
+heatmap_data_2 <- as.data.frame(as.table(contingency_table_2))
+
+# Rename the columns appropriately
+names(heatmap_data_2) <- c("topREF_prop_quartiles", "Three_Four_Quartile", "Count")
+
+# Visualise in heatmap
+quartile_2 <- ggplot(heatmap_data_2, aes(x = topREF_prop_quartiles, y = Three_Four_Quartile, fill = Count)) +
+  geom_tile() + # This creates the heatmap tiles
+  scale_fill_gradient(low = "lightblue", high = "darkblue", name = "Count") +
+  geom_text(aes(label = Count), color = "white") + # Add count numbers on the tiles
+  labs(title = "Quartile-on-Quartile Analysis Heatmap",
+       x = "% Publications in top REF rated journals",
+       y = "% Articles rated 3* or 4*") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) # Improve X axis label readability
+quartile_2
+
+#Visualise graphs
+ggarrange(scatter_plot_2, quartile_2)
+ggsave(here('output/graph_2.jpg'), width = 10, height = 5)
